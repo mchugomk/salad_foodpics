@@ -1,6 +1,7 @@
-function foodpics_firstlevel_any_session(subject_id, session_id, run_list)
-%% function foodpics_firstlevel_any_session(subject_id, session_id, run_list)
+function foodpics_firstlevel_any_session(study_id, subject_id, session_id, run_list)
+%% function foodpics_firstlevel_any_session(study_id, subject_id, session_id, run_list)
 %
+% study_id: name of folder containing study data, e.g. salad 
 % subject_id: BIDS-format subject ID, e.g., sub-204
 % session_id: BIDS-format session ID, e.g., ses-01
 % run_list: array containing list of runs to process
@@ -8,28 +9,27 @@ function foodpics_firstlevel_any_session(subject_id, session_id, run_list)
 %   to process only run 1: [1]
 %   to process only run 2: [2]
 %
-% This script runs a pipeline to analyze the SALAD foodpics data
+% This script runs a pipeline to analyze the SALAD/SENTRY foodpics data
 % Changes from adak_foodpics_spm:
 % - Saves residuals if needed for AFNI analysis
 % - Changed SPM masking threshold from 0.8 to 0.2
 % - Saves output in folder 'salad_foodpics'
 
-if nargin ~= 3 
-    error('Must specify subject_id, session_id and run_list');
+if nargin ~= 4 
+    error('Must specify study_id, subject_id, session_id and run_list');
 end
 
 %% Study specific variables to specify data folders and SPM settings
-study_id='salad';
 task_id='foodpics';
 study_dir=fullfile('/home/data/images', study_id);                              % main study directory
-onset_dir=fullfile(study_dir, 'code', [study_id '_' task_id],'matlab','src');   % directory with SPM onsets - same for all subjects in this study
+onset_dir=fullfile(study_dir, 'code', ['salsen' '_' task_id],'matlab','src');   % directory with SPM onsets - same for all subjects in this study
 bids_dir=fullfile(study_dir,'data','bids_data');					            % bids data directory
 preproc_dir=fullfile(bids_dir, 'derivatives','fmriprep_ses01t1_nofmap');        % directory with preprocessed data
 output_dir=fullfile(bids_dir,'derivatives',[study_id '_' task_id]);             % analysis output directory for fmriprep data
 
 n_vols='344';                           % each run should contain 344 volumes
 tr='1';                                 % repetition time = 1s
-fwhm='6';                               % FWHM kernel size for smoothing
+fwhm='6';                               % FWHM kernel size (mm) for smoothing
 mthresh='0.2';                          % Change masking threshold to 0.2 for ventral regions
 hpf='128';                              % Use default highpass filter
 output_space='MNI152NLin6Asym_res-02';  % Use fmriprep output in MNI152NLin6Asym template space with custom 3mm resolution
@@ -80,7 +80,7 @@ end
 
 %% Unzip nifti files for SPM and then delete gzipped files
 gunzip(fullfile(out_dir,'*.gz'));
-delete(fullfile(out_dir,'*.gz'));
+% delete(fullfile(out_dir,'*.gz'));
 
 
 %% Call firstlevel function
@@ -113,3 +113,4 @@ end
 %% Gzip residual nifti files and then delete unzipped residual files
 gzip(fullfile(out_dir,'Res_*.nii'));
 delete(fullfile(out_dir,'Res_*.nii'));
+delete(fullfile(out_dir, [subject_id '_' session_id '_' 'task-' task_id '_' 'run-0*' '_' 'space-' output_space '_' 'desc-preproc_bold.nii']));
